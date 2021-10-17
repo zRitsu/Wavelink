@@ -24,7 +24,7 @@ This example uses the following which must be installed prior to running:
 
     - Discord.py version >= 1.7.1 (pip install -U discord.py)
     - Wavelink version >= 0.5.1 (pip install -U wavelink)
-    - menus version >= 1.0.0-a (pip install -U git+https://github.com/Rapptz/discord-ext-menus.git)
+    - menus version >= 1.0.0-a (pip install -U git+https://github.com/m1raynee/disnake-ext-menus.git)
     - Python 3.7+
 --------------------------------------------------------------------------------
 """
@@ -32,13 +32,13 @@ import asyncio
 import async_timeout
 import copy
 import datetime
-import discord
+import disnake
 import math
 import random
 import re
 import typing
 import wavelink
-from discord.ext import commands, menus
+from disnake.ext import commands, menus
 
 # URL matching REGEX...
 URL_REG = re.compile(r'https?://(?:www\.)?.+')

@@ -19,14 +19,14 @@ If you find any bugs feel free to ping me on discord. @Eviee#0666
 """
 import asyncio
 import datetime
-import discord
+import disnake
 import humanize
 import itertools
 import re
 import sys
 import traceback
 import wavelink
-from discord.ext import commands
+from disnake.ext import commands
 from typing import Union
 
 
