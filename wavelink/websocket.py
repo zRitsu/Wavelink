@@ -47,6 +47,7 @@ class WebSocket:
         self.shard_count = attrs.get('shard_count')
         self.user_id = attrs.get('user_id')
         self.secure = attrs.get('secure')
+        self.user_agent = attrs.get('user_agent')
         self._dumps = attrs.get('dumps')
 
         self._websocket = None
@@ -57,7 +58,8 @@ class WebSocket:
     def headers(self):
         return {'Authorization': self.password,
                 'Num-Shards': str(self.shard_count),
-                'User-Id': str(self.user_id)}
+                'User-Id': str(self.user_id),
+                'User-Agent': self.user_agent}
 
     @property
     def is_connected(self) -> bool:

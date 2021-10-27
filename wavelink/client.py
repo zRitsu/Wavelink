@@ -368,7 +368,8 @@ class Client:
         return player
 
     async def initiate_node(self, host: str, port: int, *, rest_uri: str, password: str, region: str, identifier: str,
-                            shard_id: int = None, secure: bool = False, heartbeat: float = None) -> Node:
+                            shard_id: int = None, secure: bool = False, heartbeat: float = None,
+                            user_agent: str = None) -> Node:
         """|coro|
 
         Initiate a Node and connect to the provided server.
@@ -420,6 +421,7 @@ class Client:
                     client=self,
                     secure=secure,
                     heartbeat=heartbeat,
+                    user_agent=user_agent,
                     dumps=self._dumps)
 
         await node.connect(bot=self.bot)

@@ -71,6 +71,7 @@ class Node:
                  shard_id: int = None,
                  secure: bool = False,
                  heartbeat: float = None,
+                 user_agent: str = None,
                  dumps: Callable[[Dict[str, Any]], Union[str, bytes]] = json.dumps
                  ):
 
@@ -84,6 +85,7 @@ class Node:
         self.identifier = identifier
         self.secure = secure
         self.heartbeat = heartbeat
+        self.user_agent = user_agent
 
         self._dumps = dumps
 
@@ -131,6 +133,7 @@ class Node:
                                     password=self.password,
                                     shard_count=self.shards,
                                     user_id=self.uid,
+                                    user_agent=self.user_agent,
                                     secure=self.secure,
                                     dumps=self._dumps)
         await self._websocket._connect()
