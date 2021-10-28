@@ -59,6 +59,7 @@ class WebSocket:
         return {'Authorization': self.password,
                 'Num-Shards': str(self.shard_count),
                 'User-Id': str(self.user_id),
+                'Client-Name': f'Wavelink',
                 'User-Agent': self.user_agent}
 
     @property
