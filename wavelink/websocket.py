@@ -109,13 +109,14 @@ class WebSocket:
 
             if msg.type is aiohttp.WSMsgType.CLOSED:
 
+                self._closed = True
+
                 if not self.auto_reconnect:
                     await self.client._dispatch_listeners('on_node_connection_closed', self._node)
                     return
 
                 __log__.debug(f'WEBSOCKET | Close data: {msg.extra}')
 
-                self._closed = True
                 retry = backoff.delay()
 
                 __log__.warning(f'\nWEBSOCKET | Connection closed:: Retrying connection in <{retry}> seconds\n')
