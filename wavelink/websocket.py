@@ -113,6 +113,10 @@ class WebSocket:
 
                 if not self.auto_reconnect:
                     await self.client._dispatch_listeners('on_node_connection_closed', self._node)
+                    try:
+                        self._task.cancel()
+                    except:
+                        pass
                     return
 
                 __log__.debug(f'WEBSOCKET | Close data: {msg.extra}')
