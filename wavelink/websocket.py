@@ -48,6 +48,7 @@ class WebSocket:
         self.user_id = attrs.get('user_id')
         self.secure = attrs.get('secure')
         self.user_agent = attrs.get('user_agent')
+        self.auto_reconnect = attrs.get('auto_reconnect', True)
         self._dumps = attrs.get('dumps')
 
         self._websocket = None
@@ -107,6 +108,11 @@ class WebSocket:
             msg = await self._websocket.receive()
 
             if msg.type is aiohttp.WSMsgType.CLOSED:
+
+                if not self.auto_reconnect:
+                    await self.client._dispatch_listeners('on_node_connection_closed', self._node)
+                    return
+
                 __log__.debug(f'WEBSOCKET | Close data: {msg.extra}')
 
                 self._closed = True

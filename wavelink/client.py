@@ -369,7 +369,7 @@ class Client:
 
     async def initiate_node(self, host: str, port: int, *, rest_uri: str, password: str, region: str, identifier: str,
                             shard_id: int = None, secure: bool = False, heartbeat: float = None,
-                            user_agent: str = None) -> Node:
+                            user_agent: str = None, auto_reconnect: bool = True) -> Node:
         """|coro|
 
         Initiate a Node and connect to the provided server.
@@ -422,6 +422,7 @@ class Client:
                     secure=secure,
                     heartbeat=heartbeat,
                     user_agent=user_agent,
+                    auto_reconnect=auto_reconnect,
                     dumps=self._dumps)
 
         await node.connect(bot=self.bot)

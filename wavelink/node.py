@@ -72,6 +72,7 @@ class Node:
                  secure: bool = False,
                  heartbeat: float = None,
                  user_agent: str = None,
+                 auto_reconnect: bool = True,
                  dumps: Callable[[Dict[str, Any]], Union[str, bytes]] = json.dumps
                  ):
 
@@ -86,6 +87,7 @@ class Node:
         self.secure = secure
         self.heartbeat = heartbeat
         self.user_agent = user_agent
+        self.auto_reconnect = auto_reconnect
 
         self._dumps = dumps
 
@@ -135,7 +137,8 @@ class Node:
                                     user_id=self.uid,
                                     user_agent=self.user_agent,
                                     secure=self.secure,
-                                    dumps=self._dumps)
+                                    dumps=self._dumps,
+                                    auto_reconnect=self.auto_reconnect)
         await self._websocket._connect()
 
         __log__.info(f'NODE | {self.identifier} connected:: {self.__repr__()}')
