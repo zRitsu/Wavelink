@@ -117,6 +117,7 @@ class WebSocket:
                         self._task.cancel()
                     except:
                         pass
+                    self._task = None
                     return
 
                 __log__.debug(f'WEBSOCKET | Close data: {msg.extra}')
