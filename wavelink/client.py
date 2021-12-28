@@ -226,7 +226,7 @@ class Client:
         Optional[:class:`wavelink.node.Node`]
             The best available :class:`wavelink.node.Node` available to the :class:`.Client`.
         """
-        nodes = [n for n in self.nodes.values() if n.is_available]
+        nodes = [n for n in self.nodes.values() if n.available and n.is_available]
         if not nodes:
             return None
 
