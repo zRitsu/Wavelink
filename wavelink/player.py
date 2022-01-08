@@ -79,7 +79,7 @@ class Track:
                  'dead',
                  'thumb')
 
-    def __init__(self, id_, info: dict, query: str = None):
+    def __init__(self, id_, info: dict, query: str = None, *args, **kwargs):
         self.id = id_
         self.info = info
         self.query = query
@@ -119,7 +119,7 @@ class TrackPlaylist:
         A list of individual :class:`Track` objects from the playlist.
     """
 
-    def __init__(self, data: dict):
+    def __init__(self, data: dict, **kwargs):
         self.data = data
         self.tracks = [Track(id_=track['track'], info=track['info']) for track in data['tracks']]
 

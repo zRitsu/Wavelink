@@ -143,7 +143,7 @@ class Node:
 
         __log__.info(f'NODE | {self.identifier} connected:: {self.__repr__()}')
 
-    async def get_tracks(self, query: str, *, retry_on_failure: bool = True) -> Union[list, TrackPlaylist, None]:
+    async def get_tracks(self, query: str, *, retry_on_failure: bool = True, **kwargs) -> Union[list, TrackPlaylist, None]:
         """|coro|
 
         Search for and return a list of Tracks for the given query.
@@ -166,8 +166,11 @@ class Node:
         """
         backoff = ExponentialBackoff(base=1)
 
-        for attempt in range(5):
-            async with self.session.get(f'{self.rest_uri}/loadtracks?identifier={quote(query)}',
+        mode = "loadtracks?identifier" if not kwargs.get('channels') else "searchchannels?query"
+
+        for attempt in range(2):
+
+            async with self.session.get(f'{self.rest_uri}/{mode}={quote(query)}',
                                         headers={'Authorization': self.password}) as resp:
 
                 if not resp.status == 200 and retry_on_failure:
@@ -183,20 +186,46 @@ class Node:
                     __log__.info(f'REST | Status code ({resp.status}) while retrieving tracks. Not retrying.')
                     return
 
-                data = await resp.json()
+                try:
+                    data = await resp.json()
+                except Exception as e:
+                    raise WavelinkException(f"Failed to parse json result. | Error: {repr(e)}")
 
-                if not data['tracks']:
-                    __log__.info(f'REST | No tracks with query <{query}> found.')
-                    return None
+                if isinstance(data, list):
+                    return data
 
-                if data['playlistInfo']:
-                    return TrackPlaylist(data=data)
+                loadtype = data.get('loadType')
 
-                tracks = []
-                for track in data['tracks']:
-                    tracks.append(Track(id_=track['track'], info=track['info']))
+                if not loadtype:
+                    raise WavelinkException('There was an error while trying to load this track.')
 
-                __log__.debug(f'REST | Found <{len(tracks)}> tracks with query <{query}> ({self.__repr__()})')
+                if loadtype == 'NO_MATCHES':
+                    __log__.info(f'REST | No tracks with query:: <{query}> found.')
+                    raise WavelinkException("Track not found...")
+
+                if loadtype == 'LOAD_FAILED':
+
+                    try:
+                        error = f"There was an error of severity '{data['exception']['severity']}' while loading tracks.\n\n{data['exception']['message']}"
+                    except KeyError:
+                        error = f"There was an error of severity '{data['exception']['severity']}:\n{data['exception']['error']}"
+                    e = TrackLoadError(error=error, node=self, data=data)
+                    if not e.message:
+                        e.message = data['exception']['error']
+                    raise e
+
+                if not data.get('tracks'):
+                    __log__.info(f'REST | No tracks with query:: <{query}> found.')
+                    raise WavelinkException("Track not found...")
+
+                if loadtype == 'PLAYLIST_LOADED':
+                    playlist_cls = kwargs.pop('playlist_cls', TrackPlaylist)
+
+                    return playlist_cls(data=data, **kwargs)
+
+                track_cls = kwargs.pop('track_cls', Track)
+
+                tracks = [track_cls(id_=track['track'], info=track['info'], **kwargs) for track in data['tracks']]
 
                 return tracks
 

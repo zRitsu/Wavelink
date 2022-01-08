@@ -44,3 +44,21 @@ class AuthorizationFailure(WavelinkException):
 
 class BuildTrackError(WavelinkException):
     """Exception raised when a track is failed to be decoded and re-built."""
+
+class TrackLoadError(WavelinkException):
+    """There was an error while loading a track."""
+
+    __slots__ = ('error', 'node', 'severity', 'cause')
+
+    def __init__(self, node, error, data):
+        self.error = error
+        self.node = node
+        self.exception = data.get('exception', {})
+        self.severity = self.exception.get('severity')
+        self.message = self.exception.get('message')
+
+    def __repr__(self):
+        return f"{self.error} | {self.message}"
+
+    def __str__(self):
+        return f"{self.error} | {self.message}"
