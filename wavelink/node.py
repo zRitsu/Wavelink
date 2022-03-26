@@ -176,14 +176,14 @@ class Node:
                 if not resp.status == 200 and retry_on_failure:
                     retry = backoff.delay()
 
-                    __log__.info(f'REST | Status code ({resp.status}) while retrieving tracks. '
+                    __log__.info(f'REST | {self.identifier} | Status code ({resp.status}) while retrieving tracks. '
                                  f'Attempt {attempt} of 5, retrying in {retry} seconds.')
 
                     await asyncio.sleep(retry)
                     continue
 
                 elif not resp.status == 200 and not retry_on_failure:
-                    __log__.info(f'REST | Status code ({resp.status}) while retrieving tracks. Not retrying.')
+                    __log__.info(f'REST | {self.identifier} | Status code ({resp.status}) while retrieving tracks. Not retrying.')
                     return
 
                 try:
@@ -200,7 +200,7 @@ class Node:
                     raise WavelinkException('There was an error while trying to load this track.')
 
                 if loadtype == 'NO_MATCHES':
-                    __log__.info(f'REST | No tracks with query:: <{query}> found.')
+                    __log__.info(f'REST | {self.identifier} | No tracks with query:: <{query}> found.')
                     raise WavelinkException("Track not found...")
 
                 if loadtype == 'LOAD_FAILED':
@@ -215,7 +215,7 @@ class Node:
                     raise e
 
                 if not data.get('tracks'):
-                    __log__.info(f'REST | No tracks with query:: <{query}> found.')
+                    __log__.info(f'REST | {self.identifier} | No tracks with query:: <{query}> found.')
                     raise WavelinkException("Track not found...")
 
                 if loadtype == 'PLAYLIST_LOADED':
@@ -229,7 +229,7 @@ class Node:
 
                 return tracks
 
-        __log__.warning('REST | Failure to load tracks after 5 attempts.')
+        __log__.warning(f'REST | {self.identifier} | Failure to load tracks after 5 attempts.')
 
     async def build_track(self, identifier: str) -> Track:
         """|coro|
