@@ -23,6 +23,7 @@ SOFTWARE.
 import logging
 import time
 import re
+from traceback import print_exc
 from disnake.ext import commands
 from disnake.gateway import DiscordWebSocket
 from typing import Optional, Union
@@ -352,7 +353,10 @@ class Player:
         Stop the player, and remove any internal references to it.
         """
         await self.stop()
-        await self.disconnect(force=force)
+        try:
+            await self.disconnect(force=force)
+        except Exception:
+            print_exc()
 
         await self.node._send(op='destroy', guildId=str(self.guild_id))
 
