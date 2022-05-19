@@ -47,7 +47,7 @@ class WebSocket:
         self.shard_count = attrs.get('shard_count')
         self.user_id = attrs.get('user_id')
         self.secure = attrs.get('secure')
-        self.user_agent = attrs.get('user_agent')
+        self.user_agent = attrs.get('user_agent', '')
         self.auto_reconnect = attrs.get('auto_reconnect', True)
         self._dumps = attrs.get('dumps')
 
