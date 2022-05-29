@@ -1,6 +1,6 @@
-import disnake
+import discord
 import wavelink
-from disnake.ext import commands
+from discord.ext import commands
 
 
 class Bot(commands.Bot):

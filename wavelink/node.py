@@ -24,7 +24,7 @@ import asyncio
 import inspect
 import json
 import logging
-from disnake.ext import commands
+from discord.ext import commands
 from typing import Any, Callable, Dict, Optional, Union
 from urllib.parse import quote
 
