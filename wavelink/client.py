@@ -23,6 +23,7 @@ SOFTWARE.
 import aiohttp
 import asyncio
 import logging
+import discord
 from discord.ext import commands
 from functools import partial
 from json import dumps
@@ -343,7 +344,10 @@ class Client:
                 continue
             if node.shard_id == guild.shard_id:
                 shard_options.append(node)
-            if node.region.lower() == str(guild.region).lower():
+
+            voice_channel: discord.VoiceChannel = kwargs.pop("voice_channel", None)
+
+            if voice_channel and node.region.lower() == str(voice_channel.rtc_region).lower():
                 region_options.append(node)
 
         if not shard_options and not region_options:
