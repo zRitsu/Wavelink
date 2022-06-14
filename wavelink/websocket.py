@@ -58,9 +58,9 @@ class WebSocket:
     @property
     def headers(self):
         return {'Authorization': self.password,
-                'Num-Shards': str(self.shard_count),
+                'Resume-Key': self._node.resume_key,
                 'User-Id': str(self.user_id),
-                'Client-Name': f'Wavelink',
+                'Client-Name': 'Wavelink',
                 'User-Agent': self.user_agent}
 
     @property

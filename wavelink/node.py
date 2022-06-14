@@ -23,6 +23,7 @@ SOFTWARE.
 import asyncio
 import inspect
 import json
+import os
 import logging
 from disnake.ext import commands
 from typing import Any, Callable, Dict, Optional, Union
@@ -73,6 +74,7 @@ class Node:
                  heartbeat: float = None,
                  user_agent: str = None,
                  auto_reconnect: bool = True,
+                 resume_key: Optional[str] = None,
                  dumps: Callable[[Dict[str, Any]], Union[str, bytes]] = json.dumps
                  ):
 
@@ -88,6 +90,7 @@ class Node:
         self.heartbeat = heartbeat
         self.user_agent = user_agent
         self.auto_reconnect = auto_reconnect
+        self.resume_key = resume_key or str(os.urandom(8).hex())
 
         self._dumps = dumps
 
