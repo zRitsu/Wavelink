@@ -72,6 +72,9 @@ class Client:
 
         self._dumps = dumps
 
+        if not hasattr(bot, "music"):
+            bot.music = self
+
         bot.add_listener(self.update_handler, 'on_socket_response')
 
     @property
