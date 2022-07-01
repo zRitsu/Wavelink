@@ -41,7 +41,7 @@ __log__ = logging.getLogger(__name__)
 class WavelinkVoiceClient(VoiceClient):
 
     def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot], channel: VoiceChannel):
-        self.bot = bot
+        self.client = bot
         self.channel = channel
 
     async def on_voice_server_update(self, data):
@@ -50,7 +50,7 @@ class WavelinkVoiceClient(VoiceClient):
             'd': data
         }
 
-        await self.bot.music.update_handler(lavalink_data)
+        await self.client.music.update_handler(lavalink_data)
 
     async def on_voice_state_update(self, data):
         lavalink_data = {
@@ -58,7 +58,7 @@ class WavelinkVoiceClient(VoiceClient):
             'd': data
         }
 
-        await self.bot.music.update_handler(lavalink_data)
+        await self.client.music.update_handler(lavalink_data)
 
     async def connect(self, *, timeout: float, reconnect: bool, self_mute: bool = False, self_deaf: bool = False) -> None:
         await self.guild.change_voice_state(channel=self.channel, self_mute=self_mute, self_deaf=self_deaf)
@@ -66,7 +66,7 @@ class WavelinkVoiceClient(VoiceClient):
 
     async def disconnect(self, *, force: bool) -> None:
 
-        player = self.bot.music.players[self.channel.guild.id]
+        player = self.client.music.players[self.channel.guild.id]
 
         if not force and not player.is_connected:
             return
@@ -401,8 +401,19 @@ class Player:
         Stop the player, and remove any internal references to it.
         """
         await self.stop()
+
+        guild = self.bot.get_guild(self.guild_id)
+
         try:
-            await self.disconnect(force=force)
+            try:
+                await guild.voice_client.disconnect(force=True)
+            except:
+                pass
+
+            try:
+                guild.voice_client.cleanup()
+            except:
+                pass
         except Exception:
             print_exc()
 
