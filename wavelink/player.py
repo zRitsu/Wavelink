@@ -24,8 +24,9 @@ import logging
 import time
 import re
 from traceback import print_exc
-from disnake.ext import commands
-from disnake.gateway import DiscordWebSocket
+from discord.ext import commands
+from discord import VoiceChannel
+from discord.gateway import DiscordWebSocket, VoiceClient
 from typing import Optional, Union
 
 from .errors import *
@@ -35,6 +36,45 @@ from .events import *
 
 __all__ = ('Track', 'TrackPlaylist', 'Player')
 __log__ = logging.getLogger(__name__)
+
+
+class WavelinkVoiceClient(VoiceClient):
+
+    def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot], channel: VoiceChannel):
+        self.client = bot
+        self.channel = channel
+
+    async def on_voice_server_update(self, data):
+        lavalink_data = {
+            't': 'VOICE_SERVER_UPDATE',
+            'd': data
+        }
+
+        await self.client.music.update_handler(lavalink_data)
+
+    async def on_voice_state_update(self, data):
+        lavalink_data = {
+            't': 'VOICE_STATE_UPDATE',
+            'd': data
+        }
+
+        await self.client.music.update_handler(lavalink_data)
+
+    async def connect(self, *, timeout: float, reconnect: bool, self_mute: bool = False, self_deaf: bool = False) -> None:
+        await self.guild.change_voice_state(channel=self.channel, self_mute=self_mute, self_deaf=self_deaf)
+        self._connected = True
+
+    async def disconnect(self, *, force: bool) -> None:
+
+        player = self.client.music.players[self.channel.guild.id]
+
+        if not force and not player.is_connected:
+            return
+
+        await self.channel.guild.change_voice_state(channel=None)
+
+        player.channel_id = None
+        self.cleanup()
 
 
 class Track:
@@ -273,7 +313,15 @@ class Player:
             raise InvalidIDProvided(f'No guild found for id <{self.guild_id}>')
 
         self.channel_id = channel_id
-        await self._get_shard_socket(guild.shard_id).voice_state(self.guild_id, str(channel_id), self_deaf=self_deaf)
+
+        channel = self.bot.get_channel(channel_id)
+
+        if not guild.me.voice:
+            await channel.connect(cls=WavelinkVoiceClient, reconnect=True)
+
+        elif guild.me.voice.channel.id != channel_id:
+            await guild.voice_client.move_to(channel)
+
         __log__.info(f'PLAYER | Connected to voice channel:: {self.channel_id}')
 
     async def disconnect(self, *, force: bool = False) -> None:
@@ -353,8 +401,19 @@ class Player:
         Stop the player, and remove any internal references to it.
         """
         await self.stop()
+
+        guild = self.bot.get_guild(self.guild_id)
+
         try:
-            await self.disconnect(force=force)
+            try:
+                await guild.voice_client.disconnect(force=True)
+            except:
+                pass
+
+            try:
+                guild.voice_client.cleanup()
+            except:
+                pass
         except Exception:
             print_exc()
 
