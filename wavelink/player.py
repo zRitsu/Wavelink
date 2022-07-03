@@ -25,8 +25,8 @@ import time
 import re
 from traceback import print_exc
 from discord.ext import commands
-from discord import VoiceChannel
-from discord.gateway import DiscordWebSocket, VoiceClient
+from discord import VoiceChannel, VoiceClient
+from discord.gateway import DiscordWebSocket
 from typing import Optional, Union
 
 from .errors import *
