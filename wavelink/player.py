@@ -296,7 +296,7 @@ class Player:
         if self.bot.shard_id is None or self.bot.shard_id == shard_id:
             return self.bot.ws
 
-    async def connect(self, channel_id: int, self_deaf: bool = False):
+    async def connect(self, channel_id: int, self_mute: bool = False, self_deaf: bool = False):
         """|coro|
 
         Connect to a Discord Voice Channel.
@@ -317,7 +317,7 @@ class Player:
         channel = self.bot.get_channel(channel_id)
 
         if not guild.me.voice:
-            await channel.connect(cls=WavelinkVoiceClient, reconnect=True)
+            await channel.connect(cls=WavelinkVoiceClient, reconnect=True, self_mute=self_mute, self_deaf=self_deaf)
 
         elif guild.me.voice.channel.id != channel_id:
             await guild.voice_client.move_to(channel)
