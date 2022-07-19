@@ -60,7 +60,7 @@ class WavelinkVoiceClient(VoiceClient):
 
         await self.client.music.update_handler(lavalink_data)
 
-    async def connect(self, *, timeout: float, reconnect: bool, self_mute: bool = False, self_deaf: bool = False) -> None:
+    async def connect(self, *, timeout: float, reconnect: bool, self_mute: bool = False, self_deaf: bool = True) -> None:
         await self.guild.change_voice_state(channel=self.channel, self_mute=self_mute, self_deaf=self_deaf)
         self._connected = True
 
@@ -317,7 +317,7 @@ class Player:
         channel = self.bot.get_channel(channel_id)
 
         if not guild.me.voice:
-            await channel.connect(cls=WavelinkVoiceClient, reconnect=True, self_mute=self_mute, self_deaf=self_deaf)
+            await channel.connect(cls=WavelinkVoiceClient, reconnect=True)
 
         elif guild.me.voice.channel.id != channel_id:
             await guild.voice_client.move_to(channel)
