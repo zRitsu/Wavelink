@@ -74,6 +74,7 @@ class WavelinkVoiceClient(VoiceClient):
         await self.channel.guild.change_voice_state(channel=None)
 
         player.channel_id = None
+        self._connected = False
         self.cleanup()
 
 
