@@ -52,15 +52,6 @@ class Client:
             msg = f'wavelink.Client expected type <commands.Bot or commands.AutoShardedBot> not {type(bot)}'
             raise TypeError(msg)
 
-        try:
-            update_handlers = bot.extra_events['on_socket_response']
-        except KeyError:
-            return super().__new__(cls)
-
-        for handler in update_handlers:
-            if handler.__self__.__class__.__qualname__ == 'wavelink.Client':
-                bot.remove_listener(handler, 'on_socket_response')
-
         return super().__new__(cls)
 
     def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot], *, session: aiohttp.ClientSession = None):
