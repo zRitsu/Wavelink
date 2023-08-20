@@ -20,6 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+import pprint
 
 
 class WavelinkException(Exception):
@@ -45,6 +46,9 @@ class AuthorizationFailure(WavelinkException):
 class BuildTrackError(WavelinkException):
     """Exception raised when a track is failed to be decoded and re-built."""
 
+class TrackNotFound(WavelinkException):
+    pass
+
 class TrackLoadError(WavelinkException):
     """There was an error while loading a track."""
 
@@ -53,12 +57,14 @@ class TrackLoadError(WavelinkException):
     def __init__(self, node, error, data):
         self.error = error
         self.node = node
+        self.data = data
         self.exception = data.get('exception', {})
         self.severity = self.exception.get('severity')
         self.message = self.exception.get('message')
+        self.cause = self.exception.get('cause')
 
     def __repr__(self):
-        return f"{self.node.identifier} | {self.error} | {self.message}"
+        return self.message
 
     def __str__(self):
-        return f"{self.node.identifier} | {self.error} | {self.message}"
+        return self.message

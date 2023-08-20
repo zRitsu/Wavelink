@@ -104,6 +104,7 @@ class Node:
 
         self.hook = None
         self.available = True
+        self.restarting = False
 
         self.stats = None
 
@@ -204,7 +205,7 @@ class Node:
 
                 if loadtype == 'NO_MATCHES':
                     __log__.info(f'REST | {self.identifier} | No tracks with query:: <{query}> found.')
-                    raise WavelinkException("Track not found...")
+                    raise TrackNotFound("Track not found...")
 
                 if loadtype == 'LOAD_FAILED':
 
@@ -223,8 +224,7 @@ class Node:
 
                 if loadtype == 'PLAYLIST_LOADED':
                     playlist_cls = kwargs.pop('playlist_cls', TrackPlaylist)
-
-                    return playlist_cls(data=data, **kwargs)
+                    return playlist_cls(data=data, url=query, **kwargs)
 
                 track_cls = kwargs.pop('track_cls', Track)
 

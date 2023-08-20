@@ -23,7 +23,8 @@ SOFTWARE.
 import logging
 import time
 import re
-from traceback import print_exc
+
+import disnake
 from disnake.ext import commands
 from disnake.gateway import DiscordWebSocket
 from disnake import VoiceChannel, VoiceClient
@@ -63,6 +64,9 @@ class WavelinkVoiceClient(VoiceClient):
     async def connect(self, *, timeout: float, reconnect: bool, self_mute: bool = False, self_deaf: bool = True) -> None:
         await self.guild.change_voice_state(channel=self.channel, self_mute=self_mute, self_deaf=self_deaf)
         self._connected = True
+
+    async def move_to(self, channel) -> None:
+        await self.guild.change_voice_state(channel=channel)
 
     async def disconnect(self, *, force: bool) -> None:
 
@@ -126,13 +130,13 @@ class Track:
         self.info = info
         self.query = query
 
-        self.title = info.get('title')
+        self.title = info.get('title', '')[:97]
         self.identifier = info.get('identifier', '')
         self.ytid = self.identifier if re.match(r"^[a-zA-Z0-9_-]{11}$", self.identifier) else None
         self.length = info.get('length')
         self.duration = self.length
         self.uri = info.get('uri')
-        self.author = info.get('author')
+        self.author = info.get('author', '')[:97]
 
         self.is_stream = info.get('isStream')
         self.dead = False
@@ -163,7 +167,7 @@ class TrackPlaylist:
 
     def __init__(self, data: dict, **kwargs):
         self.data = data
-        self.tracks = [Track(id_=track['track'], info=track['info']) for track in data['tracks']]
+        self.tracks = [kwargs.pop("track_cls", Track)(id_=track['track'], info=track['info']) for track in data['tracks']]
 
 
 class Player:
@@ -193,6 +197,7 @@ class Player:
         self.last_update = None
         self.last_position = None
         self.position_timestamp = None
+        self.ping = None
 
         self._voice_state = {}
 
@@ -201,8 +206,6 @@ class Player:
         self.current = None
         self._equalizer = Equalizer.flat()
         self.channel_id = None
-
-        self._new_track = False
 
     @property
     def equalizer(self):
@@ -254,6 +257,7 @@ class Player:
         self.last_update = time.time() * 1000
         self.last_position = state.get('position', 0)
         self.position_timestamp = state.get('time', 0)
+        self.ping = state.get('ping', None)
 
     async def _voice_server_update(self, data) -> None:
         self._voice_state.update({
@@ -274,18 +278,21 @@ class Player:
             self._voice_state.clear()
             return
 
-        self.channel_id = int(channel_id)
+        if (channel_id := int(channel_id)) == self.channel_id:
+            return
+
+        self.channel_id = channel_id
         await self._dispatch_voice_update()
 
     async def _dispatch_voice_update(self) -> None:
         __log__.debug(f'PLAYER | Dispatching voice update:: {self.channel_id}')
+
         if {'sessionId', 'event'} == self._voice_state.keys():
             await self.node._send(op='voiceUpdate', guildId=str(self.guild_id), **self._voice_state)
 
     async def hook(self, event) -> None:
-        if isinstance(event, TrackEnd) and not self._new_track:
+        if isinstance(event, TrackEnd) and event.reason in ("STOPPED", "FINISHED"):
             self.current = None
-        self._new_track = False
 
     def _get_shard_socket(self, shard_id: int) -> Optional[DiscordWebSocket]:
         if isinstance(self.bot, commands.AutoShardedBot):
@@ -313,17 +320,21 @@ class Player:
         if not guild:
             raise InvalidIDProvided(f'No guild found for id <{self.guild_id}>')
 
+        try:
+            self.bot.music.players[self.guild_id]
+        except KeyError:
+            return
+
         self.channel_id = channel_id
 
         channel = self.bot.get_channel(channel_id)
 
-        if not guild.me.voice:
-            await channel.connect(cls=WavelinkVoiceClient, reconnect=True)
+        if not guild.voice_client:
+            await channel.connect(cls=WavelinkVoiceClient, reconnect=False)
+            __log__.info(f'PLAYER | Connected to voice channel:: {self.channel_id}')
 
-        elif guild.me.voice.channel.id != channel_id:
+        elif guild.voice_client.channel.id != channel_id:
             await guild.voice_client.move_to(channel)
-
-        __log__.info(f'PLAYER | Connected to voice channel:: {self.channel_id}')
 
     async def disconnect(self, *, force: bool = False) -> None:
         """|coro|
@@ -342,7 +353,7 @@ class Player:
         self.channel_id = None
         await self._get_shard_socket(guild.shard_id).voice_state(self.guild_id, None)
 
-    async def play(self, track: Track, *, replace: bool = True, start: int = 0, end: int = 0) -> None:
+    async def play(self, track: Track, *, replace: bool = True, start: int = 0, end: int = 0, **kwargs) -> None:
         """|coro|
 
         Play a WaveLink Track.
@@ -369,21 +380,22 @@ class Player:
 
         no_replace = not replace
 
-        if self.current:
-            self._new_track = True
-
         self.current = track
 
-        payload = {'op': 'play',
-                   'guildId': str(self.guild_id),
-                   'track': track.id,
-                   'noReplace': no_replace,
-                   'startTime': str(start)
-                   }
+        payload = {
+            'op': 'play',
+            'guildId': str(self.guild_id),
+            'track': track.id,
+            'noReplace': no_replace,
+            'startTime': start,
+        }
+
+        payload.update(kwargs)
+
         if end > 0:
             payload['endTime'] = str(end)
 
-        await self.node._send(**payload)
+        await self.node._send(**payload, **kwargs)
 
         __log__.debug(f'PLAYER | Started playing track:: {str(track)} ({self.channel_id})')
 
@@ -396,27 +408,25 @@ class Player:
         __log__.debug(f'PLAYER | Current track stopped:: {str(self.current)} ({self.channel_id})')
         self.current = None
 
-    async def destroy(self, *, force: bool = False) -> None:
+    async def destroy(self, *, force: bool = False, guild: Optional[disnake.Guild] = None) -> None:
         """|coro|
 
         Stop the player, and remove any internal references to it.
         """
         await self.stop()
 
-        guild = self.bot.get_guild(self.guild_id)
+        if not guild:
+            guild = self.bot.get_guild(self.guild_id)
 
         try:
-            try:
-                await guild.voice_client.disconnect(force=True)
-            except:
-                pass
+            await guild.voice_client.disconnect(force=True)
+        except:
+            pass
 
-            try:
-                guild.voice_client.cleanup()
-            except:
-                pass
-        except Exception:
-            print_exc()
+        try:
+            guild.voice_client.cleanup()
+        except:
+            pass
 
         await self.node._send(op='destroy', guildId=str(self.guild_id))
 
@@ -487,7 +497,7 @@ class Player:
 
         await self.node._send(op='seek', guildId=str(self.guild_id), position=position)
 
-    async def change_node(self, identifier: str = None) -> None:
+    async def change_node(self, identifier: str = None, force: bool = False) -> None:
         """|coro|
 
         Change the players current :class:`wavelink.node.Node`. Useful when a Node fails or when changing regions.
@@ -505,7 +515,7 @@ class Player:
 
             if not node:
                 raise WavelinkException(f'No Nodes matching identifier:: {identifier}')
-            elif node == self.node:
+            elif node == self.node and force is False:
                 raise WavelinkException('Node identifiers must not be the same while changing.')
         else:
             self.node.close()
