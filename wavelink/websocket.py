@@ -160,7 +160,8 @@ class WebSocket:
 
             # Dispatch node event/player hooks
             try:
-                self.bot.dispatch(listener, self._node, payload)
+                await self._node.on_event(payload)
+                #self.bot.dispatch(listener, self._node, payload)
             except Exception as e:
                 traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
 
