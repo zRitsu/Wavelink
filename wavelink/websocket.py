@@ -115,7 +115,7 @@ class WebSocket:
         while True:
             msg = await self._websocket.receive()
 
-            if msg.type is aiohttp.WSMsgType.CLOSED:
+            if msg.type is aiohttp.WSMsgType.CLOSED or not self.is_connected:
 
                 self._closed = True
 
@@ -139,7 +139,14 @@ class WebSocket:
                     self.bot.loop.create_task(self._connect())
             else:
                 __log__.debug(f'WEBSOCKET | Received Payload:: <{msg.data}>')
-                self.bot.loop.create_task(self.process_data(msg.json()))
+
+                try:
+                    json_data = msg.json()
+                except Exception as e:
+                    traceback.print_exc()
+                    print(repr(e))
+                else:
+                    self.bot.loop.create_task(self.process_data(json_data))
 
     async def process_data(self, data: Dict[str, Any]):
         op = data.get('op', None)
