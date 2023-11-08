@@ -121,10 +121,6 @@ class WebSocket:
 
                 if not self.auto_reconnect:
                     self.bot.dispatch('wavelink_node_connection_closed', self._node)
-                    try:
-                        self._task.cancel()
-                    except:
-                        pass
                     self._task = None
                     return
 
