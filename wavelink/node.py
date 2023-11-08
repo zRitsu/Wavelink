@@ -133,16 +133,20 @@ class Node:
         return self.stats.penalty.total
 
     async def connect(self, bot: Union[commands.Bot, commands.AutoShardedBot]) -> None:
-        self._websocket = WebSocket(node=self,
-                                    host=self.host,
-                                    port=self.port,
-                                    password=self.password,
-                                    shard_count=self.shards,
-                                    user_id=self.uid,
-                                    user_agent=self.user_agent,
-                                    secure=self.secure,
-                                    dumps=self._dumps,
-                                    auto_reconnect=self.auto_reconnect)
+
+        if not self._websocket:
+
+            self._websocket = WebSocket(node=self,
+                                        host=self.host,
+                                        port=self.port,
+                                        password=self.password,
+                                        shard_count=self.shards,
+                                        user_id=self.uid,
+                                        user_agent=self.user_agent,
+                                        secure=self.secure,
+                                        dumps=self._dumps,
+                                        auto_reconnect=self.auto_reconnect)
+
         await self._websocket._connect()
 
         __log__.info(f'NODE | {self.identifier} connected:: {self.__repr__()}')
