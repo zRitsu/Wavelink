@@ -142,9 +142,9 @@ class WebSocket:
 
                 try:
                     json_data = msg.json()
-                except Exception as e:
+                except Exception:
                     traceback.print_exc()
-                    print(repr(e))
+                    print(repr(msg))
                 else:
                     self.bot.loop.create_task(self.process_data(json_data))
 
