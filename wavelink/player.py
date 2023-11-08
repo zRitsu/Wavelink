@@ -536,9 +536,10 @@ class Player:
 
         self.node.open()
 
-        old = self.node
-        del old.players[self.guild_id]
-        await old._send(op='destroy', guildId=str(self.guild_id))
+        if self.node != node:
+            old = self.node
+            del old.players[self.guild_id]
+            await old._send(op='destroy', guildId=str(self.guild_id))
 
         self.node = node
         self.node.players[int(self.guild_id)] = self
